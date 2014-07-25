@@ -24,19 +24,31 @@ from heap.compat import execute
 
 void_ptr_ptr = caching_lookup_type('void').pointer().pointer()
 
+
+__vtable_cache = {}
+
+def caching_lookup_vtable(vtable):
+    address = '%x' % long(vtable)
+    if address in __vtable_cache:
+      return __vtable_cache[address]
+
+    info = execute('info sym (void *)0x%s' % address)
+    # "vtable for Foo + 8 in section .rodata of /home/david/heap/test_cplusplus"
+    m = re.match('vtable for (.*) \+ (.*)', info)
+    if m:
+        __vtable_cache[address] = m.group(1)
+        return __vtable_cache[address]
+    # Not matched:
+    __vtable_cache[address] = None
+    return None
+
 def get_class_name(addr, size):
     # Try to detect a vtable ptr at the top of this object:
     vtable = gdb.Value(addr).cast(void_ptr_ptr).dereference()
     if not looks_like_ptr(vtable):
         return None
 
-    info = execute('info sym (void *)0x%x' % long(vtable))
-    # "vtable for Foo + 8 in section .rodata of /home/david/heap/test_cplusplus"
-    m = re.match('vtable for (.*) \+ (.*)', info)
-    if m:
-        return m.group(1)
-    # Not matched:
-    return None
+    return caching_lookup_vtable(vtable)
     
 
 def as_cplusplus_object(addr, size):
