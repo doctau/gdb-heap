@@ -193,6 +193,7 @@ class MallocState(WrappedValue):
             yield c
 
     def iter_mmap_chunks(self):
+        return
         for inf in gdb.inferiors():
             for (start, end) in iter_mmap_heap_chunks(inf.pid):
                 # print "Trying 0x%x-0x%x" % (start, end)
