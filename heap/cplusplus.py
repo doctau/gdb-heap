@@ -32,13 +32,25 @@ def caching_lookup_vtable(vtable):
     if address in __vtable_cache:
       return __vtable_cache[address]
 
-    info = execute('info sym (void *)0x%s' % address)
-    # "vtable for Foo + 8 in section .rodata of /home/david/heap/test_cplusplus"
-    m = re.match('vtable for (.*) \+ (.*)', info)
-    if m:
-        __vtable_cache[address] = m.group(1)
-        return __vtable_cache[address]
-    # Not matched:
+    if not address.startswith("-"):
+      info = execute('info sym (void *)0x%s' % address)
+      # "vtable for Foo + 8 in section .rodata of /home/david/heap/test_cplusplus"
+      m = re.match('vtable for (.*) \+ (.*)', info)
+      if m:
+          __vtable_cache[address] = m.group(1)
+          return __vtable_cache[address]
+      # Not matched:
+      __vtable_cache[address] = None
+      return None
+
+    print "WARN: unhandled vtable"
+    print "P type: " + str(type(vtable))
+    print "string: " + str(vtable)
+    print "address: " + str(vtable.address)
+    print "type: " + str( vtable.type)
+    print "dyntype: " + str(vtable.dynamic_type)
+    print "long: " + str(long(vtable))
+    print "hex: " + ('0x%x' % long(vtable))
     __vtable_cache[address] = None
     return None
 
